@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+websockets==12.0
+httpx==0.27.0
+pandas==2.2.2
+ta==0.11.0
+python-dotenv==1.0.1
+asyncio-throttle==1.0.2
+# NOTE: do NOT install aiodns/pycares — breaks DNS resolution on Windows

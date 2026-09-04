@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #141414;
+  --bg-card: #1a1a1a;
+  --bg-border: #2a2a2a;
+  --bull: #22c55e;
+  --bear: #f43f5e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: #e2e8f0;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--bg-border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+/* Signal badge glow */
+.glow-bull { box-shadow: 0 0 10px rgba(34,197,94,0.25); }
+.glow-bear { box-shadow: 0 0 10px rgba(244,63,94,0.25);  }
+
+/* Animated pulse for scanning */
+@keyframes scan-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.scan-pulse { animation: scan-pulse 1.4s ease-in-out infinite; }
+
+/* Slide-in for new signals */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.slide-in { animation: slide-in 0.25s ease-out forwards; }

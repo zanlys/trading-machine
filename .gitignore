@@ -1,0 +1,25 @@
+# Environment
+.env
+.env.local
+.env*.local
+
+# Editor
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+venv/
+.venv/
+
+# Next.js
+.next/
+out/
+frontend/node_modules/
+
+# TypeScript
+tsconfig.tsbuildinfo
+next-env.d.ts
