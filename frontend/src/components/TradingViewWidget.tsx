@@ -59,7 +59,7 @@ export const TradingViewWidget = memo(function TradingViewWidget({
       autosize:          true,
       symbol:            tvSymbol,
       interval:          tvInterval,
-      timezone:          "Etc/UTC",
+      timezone:          "Asia/Jakarta",
       theme:             "dark",
       style:             "1",
       locale:            "en",
@@ -71,8 +71,8 @@ export const TradingViewWidget = memo(function TradingViewWidget({
       hide_volume:       false,
       support_host:      "https://www.tradingview.com",
       studies: [
-        "MASimple@tv-basicstudies",   // MA20
-        "MASimple@tv-basicstudies",   // MA50
+        { id: "MAExp@tv-basicstudies", inputs: { length: 20 } },   // EMA 20
+        { id: "MAExp@tv-basicstudies", inputs: { length: 50 } },   // EMA 50
         "StochasticRSI@tv-basicstudies",
       ],
     });
