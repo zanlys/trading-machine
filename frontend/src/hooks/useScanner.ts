@@ -29,6 +29,12 @@ export function useScanner() {
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
+    // Clear any pending retry before opening a new connection
+    if (retryRef.current) {
+      clearTimeout(retryRef.current);
+      retryRef.current = null;
+    }
+
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
@@ -51,14 +57,17 @@ export function useScanner() {
             setStatus(msg.status);
             break;
           case "scan_start":
-            setStatus((s) => ({ ...s, running: true }));
+            setStatus((s) => ({ ...s, running: true, progress: 0, total: 0, current_symbol: "" }));
             break;
           case "scan_complete":
             setSignals(msg.signals);
             setStatus((s) => ({
               ...s,
-              running:      false,
-              signal_count: msg.count,
+              running:        false,
+              signal_count:   msg.count,
+              progress:       0,
+              total:          0,
+              current_symbol: "",
             }));
             break;
           case "progress":
@@ -81,18 +90,28 @@ export function useScanner() {
 
     ws.onclose = () => {
       setConnected(false);
-      if (pingRef.current) clearInterval(pingRef.current);
-      // exponential back-off reconnect
-      const delay = Math.min(1000 * 2 ** retryCount.current, 30_000);
-      retryCount.current += 1;
-      retryRef.current = setTimeout(connect, delay);
+      if (pingRef.current) {
+        clearInterval(pingRef.current);
+        pingRef.current = null;
+      }
+      // exponential back-off reconnect — only if not intentionally closed
+      if (wsRef.current === ws) {
+        const delay = Math.min(1000 * 2 ** retryCount.current, 30_000);
+        retryCount.current += 1;
+        retryRef.current = setTimeout(connect, delay);
+      }
     };
   }, []);
 
   useEffect(() => {
     connect();
     return () => {
-      wsRef.current?.close();
+      // Signal to onclose that this is intentional (not a reconnect)
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        wsRef.current = null; // nullify first so onclose skips retry
+        ws.close();
+      }
       if (pingRef.current)  clearInterval(pingRef.current);
       if (retryRef.current) clearTimeout(retryRef.current);
     };

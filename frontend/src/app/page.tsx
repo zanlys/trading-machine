@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScanner } from "@/hooks/useScanner";
 import { Header } from "@/components/Header";
 import { ScanProgress } from "@/components/ScanProgress";
@@ -19,12 +19,11 @@ export default function Home() {
   const [search,       setSearch]       = useState("");
 
   // Auto-select the top signal when new scan completes
-  const prevCount = signals.length;
-  useMemo(() => {
+  useEffect(() => {
     if (signals.length > 0 && !activeSignal) {
       setActiveSignal(signals[0]);
     }
-  }, [signals]); // eslint-disable-line
+  }, [signals]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     return signals.filter((s) => {

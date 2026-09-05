@@ -62,7 +62,10 @@ async def scanner_loop():
     from datetime import datetime, timezone
 
     while True:
-        scan_status["running"] = True
+        scan_status["running"]        = True
+        scan_status["progress"]       = 0
+        scan_status["total"]          = 0
+        scan_status["current_symbol"] = ""
         await broadcast({"type": "scan_start"})
 
         try:
@@ -147,7 +150,10 @@ async def trigger_scan():
 
     async def one_shot():
         from datetime import datetime, timezone
-        scan_status["running"] = True
+        scan_status["running"]        = True
+        scan_status["progress"]       = 0
+        scan_status["total"]          = 0
+        scan_status["current_symbol"] = ""
         await broadcast({"type": "scan_start"})
         try:
             signals = await run_scan(progress_cb=progress_cb)

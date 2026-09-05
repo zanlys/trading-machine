@@ -21,7 +21,7 @@ export function Header({ status, connected, onTrigger }: Props) {
             Crypto Futures Scanner
           </h1>
           <p className="text-[10px] text-neutral-600">
-            MA {status.config?.ma_fast ?? 20}/{status.config?.ma_slow ?? 50} · StochRSI · {status.config?.timeframe ?? "1h"}
+            SMA {status.config?.ma_fast ?? 20}/{status.config?.ma_slow ?? 50} · StochRSI · {status.config?.timeframe ?? "1h"}
           </p>
         </div>
       </div>

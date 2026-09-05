@@ -85,10 +85,10 @@ export function DetailPanel({ data }: Props) {
 
       {/* Moving Averages */}
       <div className="rounded-lg bg-bg-card border border-bg-border p-3 space-y-2">
-        <div className="text-xs font-semibold text-neutral-400">Moving Averages</div>
+        <div className="text-xs font-semibold text-neutral-400">Moving Averages (SMA)</div>
         {[
-          { label: `MA ${data.ma_fast_period}`, value: data.ma_fast, color: "text-neutral-400" },
-          { label: `MA ${data.ma_slow_period}`, value: data.ma_slow, color: "text-neutral-500" },
+          { label: `SMA ${data.ma_fast_period}`, value: data.ma_fast, color: "text-neutral-400" },
+          { label: `SMA ${data.ma_slow_period}`, value: data.ma_slow, color: "text-neutral-500" },
         ].map(({ label, value, color }) => (
           <div key={label} className="flex justify-between items-center">
             <span className={clsx("text-xs", color)}>{label}</span>

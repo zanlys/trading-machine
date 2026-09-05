@@ -126,30 +126,47 @@ def compute_indicators(raw: list) -> dict | None:
     srsi_k  = float(row["srsi_k"])
     srsi_d  = float(row["srsi_d"])
 
-    # Trend
-    if close > ma_fast and close > ma_slow:
-        trend = "bullish"
-    elif close < ma_fast and close < ma_slow:
-        trend = "bearish"
-    else:
-        trend = "neutral"
-
-    # Signal
-    signal = "none"
-    if trend == "bullish" and srsi_k < OVERSOLD and srsi_d < OVERSOLD:
-        signal = "long"
-    elif trend == "bearish" and srsi_k > OVERBOUGHT and srsi_d > OVERBOUGHT:
-        signal = "short"
-
-    # K/D cross
+    # K/D cross (hitung dulu sebelum dipakai di logika sinyal)
     prev_k = float(prev["srsi_k"])
     prev_d = float(prev["srsi_d"])
     stoch_cross_up   = prev_k < prev_d and srsi_k > srsi_d
     stoch_cross_down = prev_k > prev_d and srsi_k < srsi_d
 
-    # Strength score 0–100
-    ma_gap_pct = abs(ma_fast - ma_slow) / ma_slow * 100 if ma_slow else 0
-    score      = min(round(ma_gap_pct * 10 + abs(srsi_k - 50)), 100)
+    # Trend
+    if close > ma_fast and close > ma_slow and ma_fast > ma_slow:
+        trend = "bullish"
+    elif close < ma_fast and close < ma_slow and ma_fast < ma_slow:
+        trend = "bearish"
+    else:
+        trend = "neutral"
+
+    # Signal logic:
+    # LONG  – trend bullish + StochRSI pullback ke oversold (momentum dip beli)
+    #       ATAU trend bullish + K cross up dari bawah 50 (momentum baru mulai)
+    # SHORT – trend bearish + StochRSI overbought (momentum jenuh jual)
+    #       ATAU trend bearish + K cross down dari atas 50
+    signal = "none"
+    if trend == "bullish":
+        if (srsi_k < OVERSOLD and srsi_d < OVERSOLD) or \
+           (stoch_cross_up and srsi_k < 50):
+            signal = "long"
+    elif trend == "bearish":
+        if (srsi_k > OVERBOUGHT and srsi_d > OVERBOUGHT) or \
+           (stoch_cross_down and srsi_k > 50):
+            signal = "short"
+
+    # Strength score 0–100 (balanced):
+    # - ma_gap_pct: seberapa jauh MA fast dari MA slow (trend strength), dikap 40 poin
+    # - srsi_component: seberapa ekstrem StochRSI dari mid-point (50), max 40 poin
+    # - cross_bonus: bonus 20 poin kalau ada K/D cross sesuai arah sinyal
+    ma_gap_pct       = abs(ma_fast - ma_slow) / ma_slow * 100 if ma_slow else 0
+    ma_component     = min(ma_gap_pct * 8, 40)
+    srsi_component   = min(abs(srsi_k - 50) * 0.8, 40)
+    cross_bonus      = 20 if (
+        (signal == "long"  and stoch_cross_up) or
+        (signal == "short" and stoch_cross_down)
+    ) else 0
+    score = min(round(ma_component + srsi_component + cross_bonus), 100)
 
     return {
         "close":            close,

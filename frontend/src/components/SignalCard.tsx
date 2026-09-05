@@ -67,11 +67,11 @@ export function SignalCard({ data, active, onClick }: Props) {
       {/* Row 3 – MA info */}
       <div className="mt-1 flex gap-3 text-xs">
         <span className="text-neutral-500">
-          MA{data.ma_fast_period}{" "}
+          SMA{data.ma_fast_period}{" "}
           <span className="text-neutral-300">{data.ma_fast.toFixed(2)}</span>
         </span>
         <span className="text-neutral-600">
-          MA{data.ma_slow_period}{" "}
+          SMA{data.ma_slow_period}{" "}
           <span className="text-neutral-300">{data.ma_slow.toFixed(2)}</span>
         </span>
       </div>

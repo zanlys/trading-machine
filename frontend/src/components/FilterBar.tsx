@@ -32,7 +32,7 @@ export function FilterBar({ filter, onFilter, search, onSearch, count }: Props) 
           onChange={(e) => onSearch(e.target.value)}
           className="w-full pl-8 pr-3 py-1.5 rounded bg-bg-primary border border-bg-border
                      text-xs text-neutral-300 placeholder-neutral-600
-                     focus:outline-none focus:border-accent-blue/60 transition-colors"
+                     focus:outline-none focus:border-neutral-500 transition-colors"
         />
       </div>
 
