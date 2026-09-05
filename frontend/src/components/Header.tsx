@@ -1,16 +1,19 @@
 "use client";
 
-import { RefreshCw, Wifi, WifiOff, Activity } from "lucide-react";
+import { RefreshCw, Wifi, WifiOff, Activity, Play, Pause } from "lucide-react";
 import clsx from "clsx";
 import type { ScanStatus } from "@/types";
 
 interface Props {
-  status:      ScanStatus;
-  connected:   boolean;
-  onTrigger:   () => void;
+  status:         ScanStatus;
+  connected:      boolean;
+  onTrigger:      () => void;
+  onToggleAuto:   () => void;
 }
 
-export function Header({ status, connected, onTrigger }: Props) {
+export function Header({ status, connected, onTrigger, onToggleAuto }: Props) {
+  const autoOn = status.auto_scan ?? true;
+
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-bg-border bg-bg-secondary">
       {/* Left – branding */}
@@ -49,6 +52,22 @@ export function Header({ status, connected, onTrigger }: Props) {
             : <WifiOff className="w-3.5 h-3.5" />}
           {connected ? "Live" : "Offline"}
         </span>
+
+        {/* Auto scan toggle */}
+        <button
+          onClick={onToggleAuto}
+          title={autoOn ? "Stop Auto Scan" : "Start Auto Scan"}
+          className={clsx(
+            "flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-all active:scale-95",
+            autoOn
+              ? "text-white bg-bull/80 hover:bg-bull"
+              : "text-neutral-400 bg-neutral-800 hover:bg-neutral-700"
+          )}
+        >
+          {autoOn
+            ? <><Pause className="w-3.5 h-3.5" /> Auto: ON</>
+            : <><Play  className="w-3.5 h-3.5" /> Auto: OFF</>}
+        </button>
 
         {/* Trigger scan button */}
         <button

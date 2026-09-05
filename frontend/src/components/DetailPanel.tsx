@@ -1,8 +1,20 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart2 } from "lucide-react";
 import clsx from "clsx";
 import type { SignalData } from "@/types";
+
+interface Props {
+  data: SignalData;
+}
+
+/** Format volume USDT: 1.23B, 456.7M, 12.3K */
+function fmtVol(v: number): string {
+  if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + "B";
+  if (v >= 1_000_000)     return (v / 1_000_000).toFixed(1) + "M";
+  if (v >= 1_000)         return (v / 1_000).toFixed(1) + "K";
+  return v.toFixed(0);
+}
 
 interface Props {
   data: SignalData;
@@ -73,22 +85,42 @@ export function DetailPanel({ data }: Props) {
       <div className="rounded-lg bg-bg-card border border-bg-border p-3">
         <div className="text-xs text-neutral-500 mb-1">Current Price</div>
         <div className="text-2xl font-bold text-white">${priceStr}</div>
-        <div className={clsx(
-          "mt-1 text-xs font-medium",
-          data.trend === "bullish" ? "text-bull" :
-          data.trend === "bearish" ? "text-bear" :
-          "text-neutral-500"
-        )}>
-          {data.trend.charAt(0).toUpperCase() + data.trend.slice(1)} trend
+        <div className="mt-2 flex items-center justify-between">
+          <div className={clsx(
+            "text-xs font-medium",
+            data.trend === "bullish" ? "text-bull" :
+            data.trend === "bearish" ? "text-bear" :
+            "text-neutral-500"
+          )}>
+            {data.trend.charAt(0).toUpperCase() + data.trend.slice(1)} trend
+          </div>
+          {data.volume_usdt != null && (
+            <div className="flex items-center gap-1 text-xs text-neutral-500">
+              <BarChart2 className="w-3.5 h-3.5" />
+              <span className="text-neutral-400">Vol</span>
+              <span className="text-neutral-200 font-medium">${fmtVol(data.volume_usdt)}</span>
+              <span className="text-neutral-600 text-[10px]">24h</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Moving Averages */}
+      {/* Moving Averages + EMA Touch */}
       <div className="rounded-lg bg-bg-card border border-bg-border p-3 space-y-2">
-        <div className="text-xs font-semibold text-neutral-400">Moving Averages (SMA)</div>
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-semibold text-neutral-400">Moving Averages (EMA)</div>
+          {data.ema_touch_type && (
+            <span className={clsx(
+              "text-[10px] font-bold rounded px-1.5 py-0.5 uppercase tracking-wide",
+              isLong ? "bg-bull/20 text-bull" : "bg-bear/20 text-bear"
+            )}>
+              ⟳ Touching {data.ema_touch_type}
+            </span>
+          )}
+        </div>
         {[
-          { label: `SMA ${data.ma_fast_period}`, value: data.ma_fast, color: "text-neutral-400" },
-          { label: `SMA ${data.ma_slow_period}`, value: data.ma_slow, color: "text-neutral-500" },
+          { label: `EMA ${data.ma_fast_period}`, value: data.ma_fast, color: "text-neutral-400" },
+          { label: `EMA ${data.ma_slow_period}`, value: data.ma_slow, color: "text-neutral-500" },
         ].map(({ label, value, color }) => (
           <div key={label} className="flex justify-between items-center">
             <span className={clsx("text-xs", color)}>{label}</span>
@@ -103,6 +135,12 @@ export function DetailPanel({ data }: Props) {
             </span>
           </div>
         ))}
+        {data.ema_touch_pct !== undefined && (
+          <div className="text-[10px] text-neutral-600 pt-1 border-t border-bg-border">
+            Jarak ke EMA terdekat:{" "}
+            <span className="text-neutral-400 font-medium">{data.ema_touch_pct.toFixed(3)}%</span>
+          </div>
+        )}
       </div>
 
       {/* Stochastic RSI gauges */}

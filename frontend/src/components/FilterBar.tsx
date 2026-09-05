@@ -3,7 +3,7 @@
 import { Search } from "lucide-react";
 import clsx from "clsx";
 
-export type FilterType = "all" | "long" | "short";
+export type FilterType = "all" | "long" | "short" | "ema20" | "ema50";
 
 interface Props {
   filter:    FilterType;
@@ -14,10 +14,41 @@ interface Props {
 }
 
 export function FilterBar({ filter, onFilter, search, onSearch, count }: Props) {
-  const tabs: { key: FilterType; label: string; color: string }[] = [
-    { key: "all",   label: "All",   color: "text-neutral-300" },
-    { key: "long",  label: "Long",  color: "text-bull" },
-    { key: "short", label: "Short", color: "text-bear" },
+  const rows: { key: FilterType; label: string; activeClass: string; idleClass: string }[][] = [
+    [
+      {
+        key: "all",
+        label: "All",
+        activeClass: "bg-neutral-700 text-neutral-200",
+        idleClass:   "text-neutral-300 bg-bg-primary hover:bg-bg-hover",
+      },
+      {
+        key: "long",
+        label: "Long",
+        activeClass: "bg-bull/20 text-bull",
+        idleClass:   "text-bull bg-bg-primary hover:bg-bg-hover",
+      },
+      {
+        key: "short",
+        label: "Short",
+        activeClass: "bg-bear/20 text-bear",
+        idleClass:   "text-bear bg-bg-primary hover:bg-bg-hover",
+      },
+    ],
+    [
+      {
+        key: "ema20",
+        label: "⟳ EMA 20",
+        activeClass: "bg-accent-blue/20 text-accent-blue",
+        idleClass:   "text-neutral-400 bg-bg-primary hover:bg-bg-hover",
+      },
+      {
+        key: "ema50",
+        label: "⟳ EMA 50",
+        activeClass: "bg-purple-500/20 text-purple-400",
+        idleClass:   "text-neutral-400 bg-bg-primary hover:bg-bg-hover",
+      },
+    ],
   ];
 
   return (
@@ -36,21 +67,31 @@ export function FilterBar({ filter, onFilter, search, onSearch, count }: Props) 
         />
       </div>
 
-      {/* Tabs */}
+      {/* Row 1: All / Long / Short */}
       <div className="flex gap-1">
-        {tabs.map(({ key, label, color }) => (
+        {rows[0].map(({ key, label, activeClass, idleClass }) => (
           <button
             key={key}
             onClick={() => onFilter(key)}
             className={clsx(
               "flex-1 rounded py-1 text-xs font-medium transition-colors",
-              filter === key
-                ? key === "long"
-                  ? "bg-bull/20 text-bull"
-                  : key === "short"
-                  ? "bg-bear/20 text-bear"
-                  : "bg-neutral-700 text-neutral-200"
-                : `${color} bg-bg-primary hover:bg-bg-hover`
+              filter === key ? activeClass : idleClass
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Row 2: EMA20 / EMA50 */}
+      <div className="flex gap-1">
+        {rows[1].map(({ key, label, activeClass, idleClass }) => (
+          <button
+            key={key}
+            onClick={() => onFilter(filter === key ? "all" : key)}
+            className={clsx(
+              "flex-1 rounded py-1 text-xs font-medium transition-colors",
+              filter === key ? activeClass : idleClass
             )}
           >
             {label}

@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, BarChart2 } from "lucide-react";
 import clsx from "clsx";
 import type { SignalData } from "@/types";
 
@@ -8,6 +8,14 @@ interface Props {
   data:      SignalData;
   active:    boolean;
   onClick:   () => void;
+}
+
+/** Format volume USDT: 1.23B, 456.7M, 12.3K */
+function fmtVol(v: number): string {
+  if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + "B";
+  if (v >= 1_000_000)     return (v / 1_000_000).toFixed(1) + "M";
+  if (v >= 1_000)         return (v / 1_000).toFixed(1) + "K";
+  return v.toFixed(0);
 }
 
 export function SignalCard({ data, active, onClick }: Props) {
@@ -52,28 +60,46 @@ export function SignalCard({ data, active, onClick }: Props) {
         </span>
       </div>
 
-      {/* Row 2 – price */}
-      <div className="mt-1 text-xs text-neutral-400">
-        Price{" "}
-        <span className="text-neutral-200 font-medium">
-          ${data.close < 0.01
-            ? data.close.toFixed(6)
-            : data.close < 1
-            ? data.close.toFixed(4)
-            : data.close.toFixed(2)}
+      {/* Row 2 – price + volume */}
+      <div className="mt-1 flex items-center justify-between text-xs text-neutral-400">
+        <span>
+          Price{" "}
+          <span className="text-neutral-200 font-medium">
+            ${data.close < 0.01
+              ? data.close.toFixed(6)
+              : data.close < 1
+              ? data.close.toFixed(4)
+              : data.close.toFixed(2)}
+          </span>
         </span>
+        {data.volume_usdt != null && (
+          <span className="flex items-center gap-1 text-neutral-500">
+            <BarChart2 className="w-3 h-3" />
+            <span className="text-neutral-300 font-medium">
+              ${fmtVol(data.volume_usdt)}
+            </span>
+          </span>
+        )}
       </div>
 
-      {/* Row 3 – MA info */}
-      <div className="mt-1 flex gap-3 text-xs">
+      {/* Row 3 – EMA info + touch badge */}
+      <div className="mt-1 flex items-center gap-3 text-xs flex-wrap">
         <span className="text-neutral-500">
-          SMA{data.ma_fast_period}{" "}
+          EMA{data.ma_fast_period}{" "}
           <span className="text-neutral-300">{data.ma_fast.toFixed(2)}</span>
         </span>
         <span className="text-neutral-600">
-          SMA{data.ma_slow_period}{" "}
+          EMA{data.ma_slow_period}{" "}
           <span className="text-neutral-300">{data.ma_slow.toFixed(2)}</span>
         </span>
+        {data.ema_touch_type && (
+          <span className={clsx(
+            "ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+            isLong  ? "bg-bull/20 text-bull" : "bg-bear/20 text-bear"
+          )}>
+            ⟳ {data.ema_touch_type}
+          </span>
+        )}
       </div>
 
       {/* Row 4 – Stoch RSI */}

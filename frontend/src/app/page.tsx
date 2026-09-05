@@ -12,7 +12,7 @@ import type { SignalData } from "@/types";
 import { AlertCircle, Radar } from "lucide-react";
 
 export default function Home() {
-  const { signals, status, connected, error, triggerScan } = useScanner();
+  const { signals, status, connected, error, triggerScan, toggleAutoScan } = useScanner();
 
   const [activeSignal, setActiveSignal] = useState<SignalData | null>(null);
   const [filter,       setFilter]       = useState<FilterType>("all");
@@ -29,6 +29,8 @@ export default function Home() {
     return signals.filter((s) => {
       if (filter === "long"  && s.signal !== "long")  return false;
       if (filter === "short" && s.signal !== "short") return false;
+      if (filter === "ema20" && s.ema_touch_type !== `EMA${s.ma_fast_period}`) return false;
+      if (filter === "ema50" && s.ema_touch_type !== `EMA${s.ma_slow_period}`) return false;
       if (search && !s.symbol.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
@@ -37,7 +39,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen bg-bg-primary overflow-hidden">
       {/* ── Top bar ── */}
-      <Header status={status} connected={connected} onTrigger={triggerScan} />
+      <Header status={status} connected={connected} onTrigger={triggerScan} onToggleAuto={toggleAutoScan} />
 
       {/* ── Error banner ── */}
       {error && (
@@ -87,7 +89,7 @@ export default function Home() {
           {activeSignal ? (
             <TradingViewWidget
               symbol={activeSignal.symbol}
-              interval={status.config?.timeframe ?? "1h"}
+              interval={status.config?.timeframe ?? "15m"}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center flex-col gap-4 text-neutral-700">

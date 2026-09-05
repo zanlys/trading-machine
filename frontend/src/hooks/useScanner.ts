@@ -13,6 +13,7 @@ const DEFAULT_STATUS: ScanStatus = {
   current_symbol: "",
   last_scan:      null,
   signal_count:   0,
+  auto_scan:      true,
 };
 
 export function useScanner() {
@@ -55,6 +56,9 @@ export function useScanner() {
           case "init":
             setSignals(msg.signals);
             setStatus(msg.status);
+            break;
+          case "auto_scan_changed":
+            setStatus((s) => ({ ...s, auto_scan: msg.enabled }));
             break;
           case "scan_start":
             setStatus((s) => ({ ...s, running: true, progress: 0, total: 0, current_symbol: "" }));
@@ -125,5 +129,13 @@ export function useScanner() {
     }
   }, []);
 
-  return { signals, status, connected, error, triggerScan };
+  const toggleAutoScan = useCallback(async () => {
+    try {
+      await fetch(`${API_URL}/scan/auto`, { method: "POST" });
+    } catch {
+      setError("Cannot reach backend");
+    }
+  }, []);
+
+  return { signals, status, connected, error, triggerScan, toggleAutoScan };
 }

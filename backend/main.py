@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from scanner import TIMEFRAME, MA_FAST, MA_SLOW, OVERSOLD, OVERBOUGHT, run_scan
+from scanner import TIMEFRAME, EMA_FAST, EMA_SLOW, OVERSOLD, OVERBOUGHT, run_scan
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -25,13 +25,15 @@ SCAN_INTERVAL = int(os.getenv("SCAN_INTERVAL", 60))
 # ── Global state ──────────────────────────────────────────────────────────────
 connected_clients: Set[WebSocket] = set()
 latest_signals:   list[dict]      = []
+auto_scan_enabled: bool           = True   # can be toggled via /scan/auto
 scan_status = {
-    "running":   False,
-    "progress":  0,
-    "total":     0,
+    "running":        False,
+    "progress":       0,
+    "total":          0,
     "current_symbol": "",
-    "last_scan": None,
-    "signal_count": 0,
+    "last_scan":      None,
+    "signal_count":   0,
+    "auto_scan":      True,
 }
 
 
@@ -62,11 +64,16 @@ async def scanner_loop():
     from datetime import datetime, timezone
 
     while True:
+        # Poll until auto scan is enabled (check every 1 second)
+        while not auto_scan_enabled:
+            await asyncio.sleep(1)
+
         scan_status["running"]        = True
         scan_status["progress"]       = 0
         scan_status["total"]          = 0
         scan_status["current_symbol"] = ""
         await broadcast({"type": "scan_start"})
+        logger.info("Auto scan started")
 
         try:
             signals = await run_scan(progress_cb=progress_cb)
@@ -84,13 +91,19 @@ async def scanner_loop():
                 "signals": signals,
                 "count":   len(signals),
             })
+            logger.info("Auto scan complete. %d signals found.", len(signals))
 
         except Exception as e:
             logger.error("Scanner error: %s", e)
             scan_status["running"] = False
             await broadcast({"type": "error", "message": str(e)})
 
-        await asyncio.sleep(SCAN_INTERVAL)
+        # Sleep in 1-second ticks so we can abort early if auto scan is disabled
+        for _ in range(SCAN_INTERVAL):
+            if not auto_scan_enabled:
+                logger.info("Auto scan paused mid-interval.")
+                break
+            await asyncio.sleep(1)
 
 
 # ── App lifecycle ─────────────────────────────────────────────────────────────
@@ -124,8 +137,8 @@ async def status():
         **scan_status,
         "config": {
             "timeframe":  TIMEFRAME,
-            "ma_fast":    MA_FAST,
-            "ma_slow":    MA_SLOW,
+            "ma_fast":    EMA_FAST,
+            "ma_slow":    EMA_SLOW,
             "oversold":   OVERSOLD,
             "overbought": OVERBOUGHT,
             "interval":   SCAN_INTERVAL,
@@ -140,6 +153,17 @@ async def get_signals():
         "count":     len(latest_signals),
         "last_scan": scan_status["last_scan"],
     }
+
+
+@app.post("/scan/auto")
+async def toggle_auto_scan():
+    """Toggle the automatic periodic scan on or off."""
+    global auto_scan_enabled
+    auto_scan_enabled = not auto_scan_enabled
+    scan_status["auto_scan"] = auto_scan_enabled
+    logger.info("Auto scan toggled: %s", "ON" if auto_scan_enabled else "OFF")
+    await broadcast({"type": "auto_scan_changed", "enabled": auto_scan_enabled})
+    return {"auto_scan": auto_scan_enabled}
 
 
 @app.post("/scan/trigger")
@@ -199,11 +223,55 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.info("WS client disconnected. Total: %d", len(connected_clients))
 
 
+def _free_port(port: int):
+    """Kill any process currently holding the given port before we bind."""
+    import signal
+    import socket
+    import subprocess
+    import sys
+
+    # Quick check — if port is free, nothing to do
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(("0.0.0.0", port))
+            return  # port is free
+        except OSError:
+            pass  # port is occupied — find and kill the owner
+
+    logger.warning("Port %d is in use. Attempting to free it...", port)
+    try:
+        if sys.platform == "win32":
+            result = subprocess.check_output(
+                f'netstat -ano | findstr :{port}', shell=True, text=True
+            )
+            for line in result.splitlines():
+                parts = line.split()
+                if len(parts) >= 5 and f":{port}" in parts[1] and parts[3] == "LISTENING":
+                    pid = int(parts[4])
+                    logger.warning("Killing PID %d on port %d", pid, port)
+                    subprocess.call(f"taskkill /F /PID {pid}", shell=True)
+        else:
+            result = subprocess.check_output(
+                f"lsof -ti tcp:{port}", shell=True, text=True
+            )
+            for pid_str in result.splitlines():
+                pid = int(pid_str.strip())
+                logger.warning("Killing PID %d on port %d", pid, port)
+                os.kill(pid, signal.SIGKILL)
+    except Exception as e:
+        logger.error("Could not free port %d: %s", port, e)
+
+
 if __name__ == "__main__":
     import uvicorn
+
+    port = int(os.getenv("PORT", 8000))
+    _free_port(port)
+
     uvicorn.run(
         "main:app",
         host=os.getenv("HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", 8000)),
+        port=port,
         reload=False,
     )

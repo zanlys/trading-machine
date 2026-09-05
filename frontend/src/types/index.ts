@@ -17,6 +17,12 @@ export interface SignalData {
   timeframe:        string;
   ma_fast_period:   number;
   ma_slow_period:   number;
+  /** Which EMA is being touched: e.g. "EMA20" or "EMA50" */
+  ema_touch_type:   string;
+  /** Percentage distance from the nearest touched EMA */
+  ema_touch_pct:    number;
+  /** Average quote volume in USDT (last 20 candles) */
+  volume_usdt:      number;
 }
 
 export interface ScanStatus {
@@ -26,6 +32,7 @@ export interface ScanStatus {
   current_symbol: string;
   last_scan:      string | null;
   signal_count:   number;
+  auto_scan:      boolean;
   config?: {
     timeframe:  string;
     ma_fast:    number;
@@ -37,9 +44,10 @@ export interface ScanStatus {
 }
 
 export type WsMessage =
-  | { type: "init";          status: ScanStatus; signals: SignalData[] }
+  | { type: "init";               status: ScanStatus; signals: SignalData[] }
   | { type: "scan_start" }
-  | { type: "scan_complete"; signals: SignalData[]; count: number }
-  | { type: "progress";      current: number; total: number; symbol: string; pct: number }
-  | { type: "error";         message: string }
+  | { type: "scan_complete";      signals: SignalData[]; count: number }
+  | { type: "progress";           current: number; total: number; symbol: string; pct: number }
+  | { type: "error";              message: string }
+  | { type: "auto_scan_changed";  enabled: boolean }
   | { type: "pong" };
